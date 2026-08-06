@@ -24,6 +24,9 @@
                 <a href="#send" class="nav-item" data-tab="send">
                     <i class="fa-regular fa-paper-plane"></i> Send Now
                 </a>
+                <a href="#broadcast" class="nav-item" data-tab="broadcast">
+                    <i class="fa-solid fa-bullhorn"></i> Broadcast
+                </a>
                 <a href="#schedule" class="nav-item" data-tab="schedule">
                     <i class="fa-regular fa-clock"></i> Schedule
                 </a>
@@ -39,6 +42,10 @@
                     <p id="status-desc">Checking WA status</p>
                 </div>
             </div>
+
+            <button id="btn-logout" class="btn btn-danger" style="width:100%;margin-top:10px;display:none;">
+                <i class="fa-solid fa-right-from-bracket"></i> Log out
+            </button>
         </aside>
 
         <!-- Main Content -->
@@ -96,7 +103,66 @@
                 </div>
             </section>
 
-            <!-- Tab: Schedule -->
+            <!-- Tab: Broadcast -->
+            <section id="tab-broadcast" class="tab-pane">
+                <header>
+                    <h1>Broadcast</h1>
+                    <p class="subtitle">Send a message to a list of contacts (paste or CSV). Add an image URL to send an image with your text.</p>
+                </header>
+
+                <div class="card form-card">
+                    <form id="broadcast-form">
+                        <div class="form-group">
+                            <label for="bc-contacts">Contacts (one per line, with country code, or CSV)</label>
+                            <textarea id="bc-contacts" rows="6" placeholder="15551234567&#10;2348012345678&#10;even a CSV works..."></textarea>
+                            <p class="text-sm text-muted mt-1">Valid numbers detected: <strong id="bc-count">0</strong></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bc-text">Message</label>
+                            <textarea id="bc-text" rows="4" placeholder="Your broadcast message..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bc-image">Image (optional)</label>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="bc-image" placeholder="Paste an image URL, or browse for one →" style="flex:1;">
+                                <button type="button" id="bc-browse" class="btn"><i class="fa-solid fa-folder-open"></i> Browse</button>
+                                <input type="file" id="bc-image-file" accept="image/*" style="display:none;">
+                            </div>
+                            <div id="bc-image-preview" class="mt-1"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bc-delay">Delay between messages (ms)</label>
+                            <input type="number" id="bc-delay" value="3000" min="500" step="500">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bc-conc">Workers (1–6, keep low to avoid limits)</label>
+                            <input type="number" id="bc-conc" value="2" min="1" max="6">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="btn-bc">
+                            <i class="fa-solid fa-bullhorn"></i> Start Broadcast
+                        </button>
+                        <button type="button" class="btn btn-danger" id="btn-bc-stop">
+                            <i class="fa-solid fa-stop"></i> Stop
+                        </button>
+                    </form>
+
+                    <div id="bc-progress" class="text-sm text-muted mt-2">Not started.</div>
+                </div>
+
+                <div class="card glass list-card">
+                    <h3>Broadcast History</h3>
+                    <div id="bc-history">
+                        <p class="text-muted">Loading...</p>
+                    </div>
+                </div>
+            </section>
+
+<!-- Tab: Schedule -->
             <section id="tab-schedule" class="tab-pane">
                 <header>
                     <h1>Schedule Messages</h1>

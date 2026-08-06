@@ -1,14 +1,16 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, isJidGroup, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const path = require('path');
+const fs = require('fs');
 const QRCode = require('qrcode');
+const { authDir, ensureDirs } = require('./paths');
 
 let sock;
 let currentQR = null;
 let isConnected = false;
 
 async function initWhatsApp() {
-  const authDir = path.join(__dirname, '..', 'auth_info');
+  ensureDirs();
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
   // Fetch the latest version directly from WA servers to avoid 405 errors
@@ -67,6 +69,25 @@ function getStatus() {
   };
 }
 
+/**
+ * Log the current WhatsApp session out and wipe local credentials so a
+ * (possibly different) number can be linked via a fresh QR.
+ */
+async function logout() {
+  isConnected = false;
+  currentQR = null;
+  try {
+    if (sock) await sock.logout();
+  } catch (e) {
+    // fall through — we still want to clear local creds
+  }
+  try {
+    fs.rmSync(authDir, { recursive: true, force: true });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
 async function getGroups() {
   if (!isConnected) return [];
   
@@ -82,5 +103,6 @@ module.exports = {
   initWhatsApp,
   getSock,
   getStatus,
-  getGroups
+  getGroups,
+  logout
 };

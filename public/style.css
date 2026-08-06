@@ -269,7 +269,7 @@ label {
 input, select, textarea {
     width: 100%;
     background: #f4f4f5;
-    border: 2px solid transparent;
+    border: 1px solid #d4d7de;
     color: var(--text-main);
     padding: 1rem 1.25rem;
     border-radius: var(--radius-input);
@@ -459,3 +459,4 @@ input:focus, select:focus, textarea:focus {
 .toast.show {
     transform: translateX(0);
 }
+

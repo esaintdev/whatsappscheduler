@@ -64,6 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${API_URL}/status`);
             const data = await res.json();
 
+            // Show the Log out button only when actually connected
+            document.getElementById('btn-logout').style.display = data.isConnected ? 'block' : 'none';
+
             if (data.isConnected) {
                 if (!isConnected) {
                     isConnected = true;
@@ -252,3 +255,173 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkStatus, 3000);
     checkStatus(); // Initial check
 });
+
+// ===== Broadcast feature (added separately — does not alter existing code) =====
+document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = 'http://localhost:3000/api';
+    let progTimer = null;
+
+    const contactsEl = document.getElementById('bc-contacts');
+    const countEl = document.getElementById('bc-count');
+
+    // Live count of valid numbers as the user types
+    contactsEl.addEventListener('input', async () => {
+        try {
+            const res = await fetch(`${API_URL}/broadcast/parse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: contactsEl.value }),
+            });
+            const data = await res.json();
+            countEl.textContent = data.total || 0;
+        } catch (e) {
+            countEl.textContent = '—';
+        }
+    });
+
+    // Load history when the Broadcast tab becomes active
+    document.querySelectorAll('.nav-item').forEach((item) => {
+        item.addEventListener('click', () => {
+            if (item.getAttribute('data-tab') === 'broadcast') loadBroadcastHistory();
+        });
+    });
+
+    async function loadBroadcastHistory() {
+        try {
+            const res = await fetch(`${API_URL}/broadcast/history`);
+            const rows = await res.json();
+            const el = document.getElementById('bc-history');
+            if (!rows.length) {
+                el.innerHTML = '<p class="text-muted">No broadcasts sent yet.</p>';
+                return;
+            }
+            el.innerHTML = `<table class="data-table">
+                <thead><tr><th>Status</th><th>Contact</th><th>Message</th><th>Time</th></tr></thead>
+                <tbody>${rows.map((r) => {
+                    const badge = r.status === 'sent' ? 'sent' : 'failed';
+                    return `<tr>
+                        <td><span class="status-badge ${badge}">${r.status}</span></td>
+                        <td>${r.contact}</td>
+                        <td title="${r.message}">${(r.message || '').substring(0, 40)}</td>
+                        <td class="text-muted text-sm">${new Date(r.sent_at).toLocaleString()}</td>
+                    </tr>`;
+                }).join('')}</tbody></table>`;
+        } catch (e) {
+            document.getElementById('bc-history').innerHTML = '<p class="text-muted">Failed to load history.</p>';
+        }
+    }
+
+    function startProgressPolling() {
+        if (progTimer) clearInterval(progTimer);
+        progTimer = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_URL}/broadcast/progress`);
+                const p = await res.json();
+                const el = document.getElementById('bc-progress');
+                if (p.running) {
+                    el.textContent = `Sending… ${p.sent} sent / ${p.done} done of ${p.total} (${p.failed} failed)${
+                        p.lastError ? ' | last error: ' + p.lastError : ''
+                    }`;
+                } else if (p.total) {
+                    el.textContent = `✓ Finished — ${p.sent} sent, ${p.failed} failed (of ${p.total}).`;
+                    loadBroadcastHistory();
+                    stopProgressPolling();
+                }
+            } catch (e) { /* ignore transient */ }
+        }, 1200);
+    }
+    function stopProgressPolling() {
+        if (progTimer) { clearInterval(progTimer); progTimer = null; }
+    }
+
+    // One image input: paste a URL, or Browse → upload a file into that same input
+    const bcImage = document.getElementById('bc-image');
+    const fileInput = document.getElementById('bc-image-file');
+    document.getElementById('bc-browse').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Image too large. Choose one under 10MB.');
+            fileInput.value = '';
+            return;
+        }
+        // Read file → upload server-side → put the resulting URL in the single field
+        const reader = new FileReader();
+        reader.onload = async () => {
+            bcImage.value = 'Uploading…';
+            try {
+                const res = await fetch(`${API_URL}/broadcast/media`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ base64: String(reader.result) }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'upload failed');
+                bcImage.value = data.url;
+                document.getElementById('bc-image-preview').innerHTML =
+                    `<img src="${data.url}" style="max-height:120px;max-width:100%;border-radius:8px;margin-top:6px;" alt="preview">`;
+            } catch (e) {
+                bcImage.value = '';
+                document.getElementById('bc-image-preview').innerHTML =
+                    `<span class="text-muted" style="color:#f0938;">Upload failed: ${e.message}</span>`;
+            } finally {
+                fileInput.value = '';
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('broadcast-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-bc');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting...';
+        try {
+            const res = await fetch(`${API_URL}/broadcast`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contacts: contactsEl.value,
+                    message: document.getElementById('bc-text').value,
+                    image: document.getElementById('bc-image').value.trim() || undefined,
+                    delayMs: Number(document.getElementById('bc-delay').value) || 3000,
+                    concurrency: Number(document.getElementById('bc-conc').value) || 2,
+                }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                document.getElementById('bc-progress').textContent = `Broadcasting to ${data.started} contacts...`;
+                startProgressPolling();
+            } else {
+                document.getElementById('bc-progress').textContent = 'Error: ' + (data.error || 'unknown');
+            }
+        } catch (err) {
+            document.getElementById('bc-progress').textContent = 'Server error: ' + err.message;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bullhorn"></i> Start Broadcast';
+        }
+    });
+
+    document.getElementById('btn-bc-stop').addEventListener('click', async () => {
+        await fetch(`${API_URL}/broadcast/stop`, { method: 'POST' });
+        document.getElementById('bc-progress').textContent = 'Stopped.';
+        loadBroadcastHistory();
+    });
+
+    loadBroadcastHistory();
+});
+
+// ===== Log out (added separately) =====
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        if (!confirm('Log out of WhatsApp and clear this session?')) return;
+        try {
+            await fetch('http://localhost:3000/api/logout', { method: 'POST' });
+        } finally {
+            location.reload();
+        }
+    });
+});
+
