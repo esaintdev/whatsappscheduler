@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // API Base URL
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL = '/api';
 
     // Elements
     const navItems = document.querySelectorAll('.nav-item');
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== Broadcast feature (added separately — does not alter existing code) =====
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL = '/api';
     let progTimer = null;
 
     const contactsEl = document.getElementById('bc-contacts');
@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-logout').addEventListener('click', async () => {
         if (!confirm('Log out of WhatsApp and clear this session?')) return;
         try {
-            await fetch('http://localhost:3000/api/logout', { method: 'POST' });
+            await fetch('/api/logout', { method: 'POST' });
         } finally {
             location.reload();
         }
