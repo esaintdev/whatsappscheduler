@@ -460,3 +460,164 @@ input:focus, select:focus, textarea:focus {
     transform: translateX(0);
 }
 
+/* ==========================================================
+   Mobile / PWA Responsive Layout
+   Desktop (>= 1024px): classic sidebar + no bottom nav
+   Mobile/medium (< 1024px): top app bar + bottom nav
+   ========================================================== */
+
+/* Mobile top bar + bottom nav: hidden on desktop by default */
+.mobile-header,
+.bottom-nav {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+
+    /* Hide the fixed sidebar, cancel its left margin */
+    .sidebar {
+        display: none;
+    }
+
+    .app-container {
+        display: block;
+    }
+
+    .main-content {
+        margin-left: 0;
+        margin-top: 64px;                 /* space for the top bar */
+        padding: 2rem 1.25rem 8rem;       /* bottom room for the nav */
+        max-width: 100%;
+        min-height: 100vh;
+    }
+
+    /* Top app bar */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 900;
+        height: 60px;
+        padding: 0 1.25rem;
+        background: var(--bg-sidebar);
+        color: var(--text-sidebar);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .mh-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .mh-brand i {
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+
+    .mh-status {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--text-muted-sidebar);
+    }
+
+    .mh-status-text {
+        max-width: 110px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .mh-logout {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--border-sidebar);
+        color: var(--text-sidebar);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .mh-logout:hover {
+        background: var(--danger);
+    }
+
+    /* Bottom navigation */
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 900;
+        background: var(--bg-sidebar);
+        border-top: 1px solid var(--border-sidebar);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .bottom-nav .nav-item {
+        flex: 1;
+        flex-direction: column;
+        gap: 4px;
+        padding: 0.65rem 0 0.7rem;
+        border-radius: 0;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .bottom-nav .nav-item i {
+        font-size: 1.25rem;
+    }
+
+    .bottom-nav .nav-item.active {
+        background: transparent;
+        color: var(--primary);
+    }
+
+    .bottom-nav .nav-item.active i {
+        color: var(--primary);
+    }
+}
+
+/* Smaller phones: tighten cards/tables */
+@media (max-width: 767px) {
+    .main-content {
+        padding: 1.5rem 1rem 8rem;
+    }
+
+    header h1 {
+        font-size: 1.9rem;
+    }
+
+    header {
+        margin-bottom: 2rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    .layout-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    /* History table becomes a scrollable block so it fits on mobile */
+    .card.glass {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+

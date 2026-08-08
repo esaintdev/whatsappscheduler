@@ -65,7 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             // Show the Log out button only when actually connected
-            document.getElementById('btn-logout').style.display = data.isConnected ? 'block' : 'none';
+            const logoutBtn = document.getElementById('btn-logout');
+            const mLogoutBtn = document.getElementById('m-btn-logout');
+            const shown = data.isConnected ? 'inline-flex' : 'none';
+            logoutBtn.style.display = shown;
+            if (mLogoutBtn) mLogoutBtn.style.display = shown;
 
             if (data.isConnected) {
                 if (!isConnected) {
@@ -97,6 +101,12 @@ document.addEventListener('DOMContentLoaded', () => {
         statusDot.className = `status-indicator ${color}`;
         statusHeading.textContent = heading;
         statusDesc.textContent = desc;
+
+        // Keep the mobile top-bar status in sync (if present)
+        const mDot = document.getElementById('m-status-dot');
+        const mHeading = document.getElementById('m-status-heading');
+        if (mDot) mDot.className = `status-indicator ${color}`;
+        if (mHeading) mHeading.textContent = heading;
     }
 
     // --- Load WhatsApp Groups ---
@@ -415,13 +425,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== Log out (added separately) =====
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-logout').addEventListener('click', async () => {
-        if (!confirm('Log out of WhatsApp and clear this session?')) return;
-        try {
-            await fetch('/api/logout', { method: 'POST' });
-        } finally {
-            location.reload();
-        }
-    });
+    const bindLogout = (btn) => {
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            if (!confirm('Log out of WhatsApp and clear this session?')) return;
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } finally {
+                location.reload();
+            }
+        });
+    };
+    bindLogout(document.getElementById('btn-logout'));
+    bindLogout(document.getElementById('m-btn-logout'));
 });
 
